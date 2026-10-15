@@ -1,0 +1,11 @@
+# Core transcription
+faster-whisper>=1.0.0,<2.0     # CTranslate2-based speech-to-text
+pydub>=0.25.0,<1.0             # Silence detection and audio trimming
+numpy>=1.24.0,<3.0             # Audio array handling
+
+# Optional: language detection beyond Whisper's own
+langdetect>=1.0.9,<2.0
+langid>=1.1.6,<2.0
+
+# GPU execution (optional - CPU works without it)
+# torch>=2.0,<3.0
