@@ -25,6 +25,10 @@ models/
 *.srt
 *.vtt
 
+# Scratch audio and scratch output (test fixtures, demo runs)
+testout/
+*.wav
+
 # Environment
 .env
 .env.*

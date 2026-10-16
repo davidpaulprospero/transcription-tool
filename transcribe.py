@@ -17,8 +17,24 @@ import argparse
 import sys
 from pathlib import Path
 
+# Allow running this file from any directory without installing the package.
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
 from src.transcription.silence_removal import remove_voiceover_silence
 from src.transcription.utils import remap_segments_to_original_time
+
+
+def unwrap_transcribe_result(result) -> list[dict]:
+    """Return the segment list from whatever WhisperClient.transcribe() gave back.
+
+    The return shape is path-dependent: the main path returns
+    ``(segments, quality_metrics)``, the CPU-fallback path returns a bare
+    segment list, and a total failure returns ``[]``. Normalising here keeps the
+    rest of the file working against one type.
+    """
+    if isinstance(result, tuple):
+        result = result[0] if result else []
+    return result if result else []
 
 
 def format_timestamp(seconds: float) -> str:
@@ -115,7 +131,9 @@ def main() -> int:
             print("Nothing to trim; transcribing the original audio.")
 
     client = WhisperClient(model_name=args.model)
-    segments = client.transcribe(audio_for_model, language=args.language)
+    segments = unwrap_transcribe_result(
+        client.transcribe(audio_for_model, language=args.language)
+    )
 
     if speech_regions_ms:
         raw_segments = [dict(s) for s in segments]
