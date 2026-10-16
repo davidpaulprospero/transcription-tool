@@ -1,0 +1,20 @@
+# Streamlit config.
+
+[server]
+# Commits to the running container must be safe. These are settings that affect
+# the deployed app on Streamlit Community Cloud as well as local runs.
+headless = true
+
+# Free-tier containers have ~1 GB RAM. A 200 MB upload is the Streamlit default
+# and will exhaust that before transcription even starts, so the limit is set
+# to something a CPU transcription can actually chew through. The README says
+# short clips are the realistic test on CPU; this enforces it.
+maxUploadSize = 50
+
+[browser]
+# Collect nothing from visitors.
+gatherUsageStats = false
+
+[theme]
+base = "light"
+primaryColor = "#FF4B4B"

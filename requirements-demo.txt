@@ -1,6 +1,10 @@
-# Extra dependencies for the Streamlit demo (demo.py).
-# Not needed if you only use the library or the CLI.
+# Dependencies for the Streamlit demo (demo.py).
+#
+# streamlit now also lives in requirements.txt, because Streamlit Community
+# Cloud installs from requirements.txt only and ignores this file. This one is
+# kept so you can install just the demo without re-reading the main file.
+#
+#     pip install -r requirements-demo.txt
+#     streamlit run demo.py
 
 -r requirements.txt
-
-streamlit>=1.40,<2.0

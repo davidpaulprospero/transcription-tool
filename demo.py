@@ -29,12 +29,16 @@ st.set_page_config(
     layout="wide",
 )
 
-MODEL_CHOICES = ["tiny", "base", "small", "medium"]
+# Capped at small. Streamlit's free tier gives ~1 GB RAM and no GPU, and the
+# model weights live in RAM while loaded: tiny is ~75 MB, base ~142 MB, small
+# ~460 MB. medium and above do not fit, and failing to load a 1.5 GB model is a
+# far worse first impression than not offering it. See README for running
+# locally, where medium is fine.
+MODEL_CHOICES = ["tiny", "base", "small"]
 MODEL_NOTES = {
     "tiny": "fastest, roughest — good for trying the pipeline",
     "base": "fast and usable",
-    "small": "noticeably better, slower",
-    "medium": "best accuracy here, slow on CPU",
+    "small": "most accurate that fits the free tier, noticeably slower",
 }
 
 
@@ -179,7 +183,19 @@ with st.spinner("Trimming silence…"):
 progress.progress(0.4, text="Loading model and transcribing…")
 started = time.time()
 
-client = get_client(model_name)
+# The first call on a cold container also downloads the model weights, so this
+# can take a while and can fail on memory. Both need a real message rather than
+# a traceback — on a free-tier container this is the most likely way to fail.
+try:
+    client = get_client(model_name)
+except Exception as exc:  # noqa: BLE001 - surface the real reason in the UI
+    progress.empty()
+    st.error(f"Could not load the '{model_name}' model: {exc}")
+    st.caption(
+        "The first run of a session downloads the model weights, and the free "
+        "tier has about 1 GB of RAM. If this keeps failing, try the `tiny` model."
+    )
+    st.stop()
 
 try:
     raw_segments, quality_metrics = unwrap_transcribe_result(
@@ -188,14 +204,16 @@ try:
             language=language or None,
         )
     )
-except FileNotFoundError as exc:
+except FileNotFoundError:
     progress.empty()
     st.error(
-        "ffmpeg was not found on this system. It is required to decode the "
-        "uploaded media into audio. Install it and retry:\n\n"
-        "- **Windows:** `winget install Gyan.FFmpeg`\n"
-        "- **macOS:** `brew install ffmpeg`\n"
-        "- **Debian/Ubuntu:** `sudo apt install ffmpeg`"
+        "ffmpeg was not found, and it is required to decode audio or video "
+        "into something the model can read. This host does not appear to have "
+        "it available."
+    )
+    st.caption(
+        "Locally, install it with `winget install Gyan.FFmpeg` (Windows), "
+        "`brew install ffmpeg` (macOS) or `sudo apt install ffmpeg` (Debian)."
     )
     st.stop()
 except Exception as exc:  # noqa: BLE001 - surface the real reason in the UI

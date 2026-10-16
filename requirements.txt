@@ -7,5 +7,10 @@ numpy>=1.24.0,<3.0             # Audio array handling
 langdetect>=1.0.9,<2.0
 langid>=1.1.6,<2.0
 
+# Web demo (demo.py). Listed here rather than only in requirements-demo.txt
+# because Streamlit Community Cloud installs from requirements.txt and will not
+# look at the second file.
+streamlit>=1.40,<2.0
+
 # GPU execution (optional - CPU works without it)
 # torch>=2.0,<3.0

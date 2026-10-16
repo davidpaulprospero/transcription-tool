@@ -73,6 +73,26 @@ seconds of drift corrected**, which matches what `--compare` prints on the CLI.
 
 It runs on CPU by default, so short clips are the realistic test.
 
+### Deploying the demo
+
+The app is configured for [Streamlit Community Cloud](https://share.streamlit.io):
+
+- `streamlit` is in `requirements.txt`, because that platform installs from
+  `requirements.txt` only and ignores `requirements-demo.txt`.
+- `.streamlit/config.toml` caps uploads at 50 MB. The platform default is 200 MB,
+  which would exhaust a free-tier container before transcription even started.
+- The model picker stops at `small`. There is no GPU and roughly 1 GB of RAM,
+  and the weights sit in RAM while loaded: `tiny` ~75 MB, `base` ~142 MB,
+  `small` ~460 MB. `medium` and above do not fit. Locally they are fine.
+
+Deploy by pointing the platform at this repository, setting `demo.py` as the
+entrypoint, and waiting for the build. The first request of a cold container
+downloads the model weights, so it is slow; later ones reuse the cached model.
+
+One thing to know before deploying it yourself: the app sleeps after a period of
+inactivity and wakes on the next request. A visitor arriving at a cold app waits
+through a container start and a weight download.
+
 ---
 
 ## What else is in here
