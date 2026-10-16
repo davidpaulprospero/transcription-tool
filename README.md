@@ -93,6 +93,28 @@ One thing to know before deploying it yourself: the app sleeps after a period of
 inactivity and wakes on the next request. A visitor arriving at a cold app waits
 through a container start and a weight download.
 
+### Two things that will silently break the deploy
+
+Both of these produced an app that *registered* fine and then served nothing —
+a blank page and a 303 redirect loop, with no error in the dashboard. Neither is
+visible until you load the URL in a browser.
+
+**1. Set the Python version to 3.12 in the dashboard settings.** This is the one
+that bites. The platform defaults to a newer Python, and `pydub` imports
+`audioop`, which was removed in Python 3.13. On 3.14 the import raises
+`ImportError` and the app dies at startup.
+
+The `.python-version` file in this repo is *not* enough on its own — the
+dashboard setting wins. Set it there.
+
+**2. `ctranslate2` is pinned deliberately.** See the comment in
+`requirements.txt`: the recent releases only ship wheels for glibc 2.28+, so on
+an older image pip tries to compile from source, fails, and the app never
+starts.
+
+Both failures look identical from outside, which is the annoying part. If your
+deploy shows a title but no UI, check the Python version first.
+
 ---
 
 ## What else is in here
