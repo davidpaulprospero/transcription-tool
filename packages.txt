@@ -1,0 +1,12 @@
+# System packages installed on the host image at build time.
+#
+# ffmpeg is here because two things in this project shell out to the ffmpeg
+# *binary*, and the Python wheels do not cover them:
+#   - pydub (silence trimming) decodes via the ffmpeg executable
+#   - src.transcription.utils.extract_audio() (video -> audio) uses it directly
+#
+# faster-whisper itself does not need the binary (it decodes with PyAV), which
+# is what makes this confusing: uploading a file without trimming can work on a
+# host with no ffmpeg at all, and the same upload then fails the moment "Trim
+# silence" is ticked. Install ffmpeg so both paths work.
+ffmpeg

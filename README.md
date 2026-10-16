@@ -93,9 +93,9 @@ One thing to know before deploying it yourself: the app sleeps after a period of
 inactivity and wakes on the next request. A visitor arriving at a cold app waits
 through a container start and a weight download.
 
-### Two things that will silently break the deploy
+### Three things that will silently break the deploy
 
-Both of these produced an app that *registered* fine and then served nothing —
+The first two produced an app that *registered* fine and then served nothing —
 a blank page and a 303 redirect loop, with no error in the dashboard. Neither is
 visible until you load the URL in a browser.
 
@@ -114,6 +114,23 @@ starts.
 
 Both failures look identical from outside, which is the annoying part. If your
 deploy shows a title but no UI, check the Python version first.
+
+**3. `ffmpeg` has to come from `packages.txt`, not `requirements.txt`.** This
+one fails *later* and more confusingly, because the app looks healthy right up
+until you press Transcribe.
+
+`faster-whisper` decodes with PyAV, so it needs no `ffmpeg` binary. But two
+other paths do: `pydub` shells out to the `ffmpeg` executable to read audio, and
+`extract_audio()` calls it directly for video. On a host without it, uploading a
+file with **Trim silence** ticked dies on a bare `FileNotFoundError`.
+
+`packages.txt` is the file the platform reads for OS packages (it runs
+`apt-get install` on each line). A `pip`-level `ffmpeg` does not exist, so
+`packages.txt` is the only place this can be fixed.
+
+`demo.py` now checks for the binary with `shutil.which("ffmpeg")` and disables
+the trim checkbox when it is missing, so the failure is stated up front instead
+of surfacing as a `FileNotFoundError` mid-transcription.
 
 ---
 

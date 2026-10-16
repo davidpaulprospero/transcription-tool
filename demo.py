@@ -9,6 +9,7 @@ Run with:
 
 from __future__ import annotations
 
+import shutil
 import sys
 import tempfile
 import time
@@ -40,6 +41,13 @@ MODEL_NOTES = {
     "base": "fast and usable",
     "small": "most accurate that fits the free tier, noticeably slower",
 }
+
+# Trimming needs the ffmpeg *binary*: pydub decodes by shelling out to it, and
+# extract_audio() uses it directly for video. faster-whisper's own decoding goes
+# through PyAV and does not need it, so without this check the app appears to
+# work right up until someone ticks "Trim silence" and then dies with a bare
+# FileNotFoundError. packages.txt installs ffmpeg on the hosted image.
+FFMPEG_AVAILABLE = shutil.which("ffmpeg") is not None
 
 
 @st.cache_resource(show_spinner="Loading model…")
@@ -130,8 +138,15 @@ with col2:
 trim = st.checkbox(
     "Trim silence before transcribing",
     value=True,
+    disabled=not FFMPEG_AVAILABLE,
     help="Removes long silences, then remaps timestamps back to the original timeline.",
 )
+
+if not FFMPEG_AVAILABLE:
+    st.warning(
+        "ffmpeg is not installed on this host, so silence trimming is unavailable. "
+        "Transcription still works — untick the box to continue. See `packages.txt`."
+    )
 
 with st.expander("Trimming settings"):
     a, b, c, d = st.columns(4)
@@ -160,25 +175,28 @@ progress = st.progress(0, text="Preparing…")
 speech_regions: list[tuple[int, int]] = []
 audio_for_model = str(source_path)
 
-with st.spinner("Trimming silence…"):
-    try:
-        trim_result = remove_voiceover_silence(
-            str(source_path),
-            min_silence_len_ms=min_silence,
-            silence_thresh_dbfs=threshold,
-            keep_silence_ms=keep_silence,
-            crossfade_ms=crossfade,
-        )
-    except Exception as exc:  # noqa: BLE001 - surface the real reason in the UI
-        st.error(f"Silence removal failed: {exc}")
-        st.stop()
+if trim:
+    with st.spinner("Trimming silence…"):
+        try:
+            trim_result = remove_voiceover_silence(
+                str(source_path),
+                min_silence_len_ms=min_silence,
+                silence_thresh_dbfs=threshold,
+                keep_silence_ms=keep_silence,
+                crossfade_ms=crossfade,
+            )
+        except Exception as exc:  # noqa: BLE001 - surface the real reason in the UI
+            st.error(f"Silence removal failed: {exc}")
+            st.stop()
 
-    if trim_result is not None and trim_result.was_trimmed:
-        audio_for_model = trim_result.trimmed_path
-        speech_regions = trim_result.speech_regions_ms
-        progress.progress(0.2, text=f"Trimmed into {len(speech_regions)} speech regions.")
-    else:
-        progress.progress(0.2, text="Nothing to trim.")
+        if trim_result is not None and trim_result.was_trimmed:
+            audio_for_model = trim_result.trimmed_path
+            speech_regions = trim_result.speech_regions_ms
+            progress.progress(0.2, text=f"Trimmed into {len(speech_regions)} speech regions.")
+        else:
+            progress.progress(0.2, text="Nothing to trim.")
+else:
+    progress.progress(0.2, text="Trimming skipped.")
 
 progress.progress(0.4, text="Loading model and transcribing…")
 started = time.time()
