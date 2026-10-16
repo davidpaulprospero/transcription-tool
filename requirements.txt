@@ -1,7 +1,18 @@
 # Core transcription
-faster-whisper>=1.0.0,<2.0     # CTranslate2-based speech-to-text
-pydub>=0.25.0,<1.0             # Silence detection and audio trimming
-numpy>=1.24.0,<3.0             # Audio array handling
+#
+# The pins on ctranslate2 and av are deliberate and verified against the wheel
+# index, not chosen for taste. faster-whisper depends on ctranslate2, and the
+# 4.7/4.8 releases only publish wheels for manylinux_2_28 and newer (glibc 2.28).
+# On an older-glibc image pip cannot find a prebuilt wheel and falls back to
+# building from source, which needs a compiler the hosted image does not have.
+# 4.6.2 is the newest release that still ships a manylinux2014 wheel (glibc 2.17),
+# so it installs anywhere. Verified with:
+#   pip download ctranslate2==4.6.2 --only-binary=:all: --platform manylinux2014_x86_64
+faster-whisper==1.2.1
+ctranslate2==4.6.2             # pinned: see note above
+av==14.2.0                      # pinned: keeps a manylinux2014 wheel
+pydub==0.25.1
+numpy>=1.24.0,<3.0
 
 # Optional: language detection beyond Whisper's own
 langdetect>=1.0.9,<2.0
