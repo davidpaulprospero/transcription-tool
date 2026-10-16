@@ -2,3 +2,10 @@
 
 pytest>=8.0,<10.0
 pytest-cov>=5.0,<8.0
+
+# Optional extra language detectors, used by whisper_client when available and
+# skipped (with an ImportError guard) when not. Kept out of requirements.txt
+# because langid 1.1.6 ships no wheel for any platform, and a source build in a
+# hosted image is a common way for an otherwise-fine deploy to fail.
+langdetect>=1.0.9,<2.0
+langid>=1.1.6,<2.0

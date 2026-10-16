@@ -14,9 +14,14 @@ av==14.2.0                      # pinned: keeps a manylinux2014 wheel
 pydub==0.25.1
 numpy>=1.24.0,<3.0
 
-# Optional: language detection beyond Whisper's own
-langdetect>=1.0.9,<2.0
-langid>=1.1.6,<2.0
+# Optional: language detection beyond Whisper's own.
+#
+# Deliberately NOT here. Both are lazily imported behind ImportError guards in
+# whisper_client, so the pipeline runs fine without them and falls back to
+# Whisper's own detection. Keeping them out of this file is not only about size:
+# langid 1.1.6 is a 2016 sdist with no wheel for any platform, so installing it
+# runs a source build, and that is the step most likely to fail (or blow the
+# build time budget) on a hosted image. See requirements-dev.txt.
 
 # Web demo (demo.py). Listed here rather than only in requirements-demo.txt
 # because Streamlit Community Cloud installs from requirements.txt and will not
